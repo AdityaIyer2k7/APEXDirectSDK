@@ -1,0 +1,16 @@
+name: apexlab_test01
+channels:
+- defaults
+- conda-forge
+dependencies:
+- python
+- cmake=3.31.*
+- boost
+- yaml-cpp
+- numpy
+- git
+- pip
+- pip:
+  - scipy
+  - matplotlib
+  - pybind11
