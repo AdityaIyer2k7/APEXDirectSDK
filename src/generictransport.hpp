@@ -29,11 +29,12 @@ namespace APEXDirectSDK::Gantry {
       virtual int connect(std::string ip, std::string service);
       virtual bool isConnected() const;
       virtual int disconnect();
-      virtual int addCommand(PriorityCommand command, ResponseHandle& responseHandle);
+      virtual int addCommand(PriorityCommand command, std::optional<ResponseHandle>& responseHandle);
       virtual ~GenericTransport() = default;
     protected:
+      virtual int _send(std::string command);
       std::string _port;
       std::string _service;
-      std::optional<boost::asio::ip::tcp> _socket;
+      std::optional<boost::asio::ip::tcp::socket> _socket;
   };
 }
