@@ -1,10 +1,16 @@
 #include "transport.hpp"
 #include <iostream>
+#include <string>
 
-
-int main() {
+int main(int argc, char* argv[]) {
     APEXDirectSDK::Gantry::Transport transport;
-    int ec = transport.connect("192.168.2.10", 23);
+    std::string ip = "127.0.0.1";
+    int port = 1024;
+    if (argc > 0)
+        ip = argv[0];
+    if (argc > 1)
+        port = std::stoi(argv[1]);
+    int ec = transport.connect(ip, port);
     std::cout << "Error code: " << ec << std::endl;
     return 0;
 }
