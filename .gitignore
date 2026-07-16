@@ -1,6 +1,7 @@
 # For this project
 
 flexiv_rdk/thirdparty/cloned/*
+.vscode/*
 
 # From Github's C++.gitignore
 # Prerequisites

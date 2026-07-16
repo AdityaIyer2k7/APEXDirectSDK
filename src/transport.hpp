@@ -2,9 +2,7 @@
 
 #include <string>
 #include <queue>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+#include <optional>
 #include "boost/asio.hpp"
 
 #define ASIO boost::asio
@@ -28,16 +26,16 @@ namespace APEXDirectSDK::Gantry {
   class Transport {
   public:
     std::string inet4_ip;
-    int inet4_port = 23;
-    Transport(std::string ip);
-    Transport(std::string ip, int port);
+    int inet4_port;
+    Transport();
     ~Transport();
-    int connect();
+    int connect(std::string ip);
+    int connect(std::string ip, int port);
     int addCommand(std::string& command);
     int addCommand(PriorityCommand command);
   private:
     ASIO::io_context _io_ctx;
-    ASIO::ip::tcp::socket* _socket;
+    std::optional<ASIO::ip::tcp::socket> _socket;
     std::priority_queue<PriorityCommand> _commandsToSend;
   };
 }

@@ -5,7 +5,7 @@ channels:
 dependencies:
 - python
 - cmake=3.31.*
-- boost
+- boost-cpp
 - yaml-cpp
 - numpy
 - git
