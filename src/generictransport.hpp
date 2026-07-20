@@ -9,8 +9,9 @@
 
 namespace APEXDirectSDK::Gantry {
   typedef struct PriorityCommand {
-    std::string& command;
+    std::string* command;
     int priority;
+    PriorityCommand(std::string* command, int priority);
     bool operator<(const PriorityCommand &rhs) const;
   } PriorityCommand;
 
@@ -29,12 +30,12 @@ namespace APEXDirectSDK::Gantry {
       virtual int connect(std::string ip, std::string service);
       virtual bool isConnected() const;
       virtual int disconnect();
-      virtual int addCommand(PriorityCommand command, std::optional<ResponseHandle>& responseHandle);
       virtual ~GenericTransport() = default;
     protected:
-      virtual int _send(std::string command);
-      std::string _port;
-      std::string _service;
+      int _send(std::string command);
+      boost::asio::io_context _io_ctx;
+      std::optional<std::string> _ip;
+      std::optional<std::string> _service;
       std::optional<boost::asio::ip::tcp::socket> _socket;
   };
 }
