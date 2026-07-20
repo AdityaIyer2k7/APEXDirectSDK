@@ -12,7 +12,8 @@ int Transport::connect(std::string ip, std::string service) {
     auto endpoint = resolver.resolve(ip, service);
 
     boost::asio::connect(*_socket, endpoint);
-    _ip = _port = std::nullopt;
+    _ip = ip;
+    _port = service;
   } catch (std::exception& e) {
     std::cout << "[ERROR] " << e.what() << std::endl;
     return 1;
@@ -22,7 +23,7 @@ int Transport::connect(std::string ip, std::string service) {
 }
 
 int Transport::addCommand(PriorityCommand command, std::optional<ResponseHandle> &responseHandle) {
-  
+  return -1;
 }
 
 bool Transport::isConnected() const { return _socket.has_value() && _socket->is_open(); }
@@ -32,4 +33,9 @@ int Transport::disconnect() {
   _socket->close();
   _socket = std::nullopt;
   _ip = _port = std::nullopt;
+  return 0;
+}
+
+Transport::~Transport() {
+  disconnect();
 }

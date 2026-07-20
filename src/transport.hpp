@@ -19,8 +19,11 @@ namespace APEXDirectSDK::Gantry {
     bool isConnected() const override;
 
     int disconnect() override;
+
+    ~Transport();
   private:
-    std::optional<std::string> _ip, _port = std::nullopt;
+    std::optional<std::string> _ip = std::nullopt;
+    std::optional<std::string> _service = std::nullopt;
     ASIO::io_context _io_ctx;
   };
 }
