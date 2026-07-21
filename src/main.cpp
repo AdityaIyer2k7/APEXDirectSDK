@@ -1,4 +1,4 @@
-#include "gantry/transport.hpp"
+#include "transport/transport.hpp"
 #include <iostream>
 #include <string>
 
@@ -19,7 +19,7 @@ int main() {
     while (true) {
         std::string command;
         std::cout << "Command: ";
-        std::cin >> command;
+        std::getline(std::cin, command);
         
         ResponseHandle* rh = new ResponseHandle();
         transport.addCommand(PriorityCommand(command, 0, rh));
@@ -28,6 +28,7 @@ int main() {
         std::string out;
         rh->read(out);
         std::cout << out << std::endl;
+        delete rh;
     }
     
     return 0;

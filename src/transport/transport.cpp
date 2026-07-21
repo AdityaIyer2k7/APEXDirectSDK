@@ -28,8 +28,7 @@ PriorityCommand::PriorityCommand(
   this->responseHandle = responseHandle.value_or(new ResponseHandle());
 }
 
-bool PriorityCommand::operator<(const PriorityCommand &rhs) const
-{
+bool PriorityCommand::operator<(const PriorityCommand &rhs) const {
   return this->priority < rhs.priority;
 }
 
@@ -59,12 +58,7 @@ int Transport::_executeRW(Transport* parent)
     if (!parent->_exec_thread_running) continue;
 
     std::string response;
-    while (parent->_exec_thread_running &&
-      (response.size() < 1 || response[response.size()-1] != '>')) {
-      std::string packet;
-      int ec = parent->GenericTransport::_recv(packet);
-      if (!ec) response += packet;
-    }
+    parent->GenericTransport::_recv_until(response, '>');
     rh->write(response);
   }
   return 0;
@@ -75,8 +69,7 @@ int Transport::connect(std::string ip, std::string service) {
   if (ret) return ret;
   ret = _send("\r\n");
   std::string leading;
-  while (leading.size() < 1 || leading[leading.size()-1] != '>')
-    GenericTransport::_recv(leading);
+  GenericTransport::_recv_until(leading, '>');
   _exec_thread = std::thread(_executeRW, this);
   _exec_thread->detach();
   return ret;

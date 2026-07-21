@@ -15,6 +15,7 @@ namespace APEXDirectSDK::Gantry {
     protected:
       int _send(std::string command);
       int _recv(std::string& out);
+      int _recv_until(std::string& out, char delimiter);
       boost::asio::io_context _io_ctx;
       std::optional<std::string> _ip;
       std::optional<std::string> _service;

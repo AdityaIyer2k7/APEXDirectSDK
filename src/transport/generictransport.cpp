@@ -61,3 +61,24 @@ int GenericTransport::_recv(std::string& out) {
     return 1;
   }
 }
+
+int GenericTransport::_recv_until(std::string &out, char delimiter)
+{
+  if (!_socket.has_value()) return 127;
+  
+  try {
+    boost::asio::streambuf buffer;
+    boost::system::error_code ec;
+    // boost::asio::read(*_socket, buffer, ec);
+    boost::asio::read_until(*_socket, buffer, delimiter, ec);
+    out = std::string(
+      boost::asio::buffers_begin(buffer.data()),
+      boost::asio::buffers_end(buffer.data())
+    );
+    return ec.value();
+  } catch (std::exception& e) {
+    std::cout << "[ERROR] in GenericTransport::_recv;"
+      << " wrapped error << " << e.what() << std::endl;
+    return 1;
+  }
+}
