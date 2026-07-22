@@ -1,11 +1,11 @@
 #pragma once
 
+#include "generictransport.hpp"
+
 #include <optional>
 #include <thread>
 #include <mutex>
 #include <queue>
-
-#include "generictransport.hpp"
 
 namespace APEXDirectSDK::Gantry {
   class ResponseHandle {

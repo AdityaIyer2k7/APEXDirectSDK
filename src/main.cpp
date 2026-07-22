@@ -1,10 +1,25 @@
-#include "gantrytransport/transport.hpp"
-#include "gantrytransport/parser.hpp"
+#include "gantry/axis.hpp"
+#include "gantry/transport.hpp"
+#include "gantry/parser.hpp"
 
+#include <yaml-cpp/yaml.h>
 #include <iostream>
 #include <string>
 
 using namespace APEXDirectSDK::Gantry;
+
+void axistest() {
+    Axis x1;
+    std::string yaml_text =
+        "module_idx: 1\n"
+        "mm_per_rev: 15\n"
+        "inverted: true\n";
+    x1.configure(YAML::Load(yaml_text));
+    std::cout << "_module_idx: " << x1._module_idx << std::endl;
+    std::cout << "_mm_per_rev: " << x1._mm_per_rev << std::endl;
+    std::cout << "_inverted: " << x1._inverted << std::endl;
+    std::cout << "_home_is_inverted: " << x1._home_is_inverted << std::endl;
+}
 
 void parsetest() {
     std::string test0 = "0 51200.000 >";
@@ -28,19 +43,19 @@ void parsetest() {
 
 void telnetloop() {
     Transport transport;
-    std::string ip = "127.0.0.1";
-    int port = 1024;
+    std::string ip , service;
     std::cout << "IP: ";
     std::cin >> ip;
     std::cout << "Port: ";
-    std::cin >> port;
-    int ec = transport.connect(ip, port);
-    std::cout << "Connecting to " << ip << " :: " << port << std::endl;
+    std::cin >> service;
+
+    std::cout << "Connecting to " << ip << " :: " << service << std::endl;
+    int ec = transport.connect(ip, service);
     std::cout << "Exit code " << ec << std::endl << std::endl;
 
+    std::cout << ">";
     while (true) {
         std::string command;
-        std::cout << "Command: ";
         std::getline(std::cin, command);
         
         ResponseHandle* rh = new ResponseHandle();
@@ -49,14 +64,15 @@ void telnetloop() {
 
         std::string out;
         rh->read(out);
-        std::cout << out << std::endl;
+        std::cout << out;
         delete rh;
     }
 }
 
 int main() {
+    axistest();
     parsetest();
-    telnetloop();
+    // telnetloop();
     
     return 0;
 }

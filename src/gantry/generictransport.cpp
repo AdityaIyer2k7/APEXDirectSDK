@@ -1,4 +1,5 @@
 #include "generictransport.hpp"
+
 #include <iostream>
 
 using namespace APEXDirectSDK::Gantry;
@@ -62,8 +63,7 @@ int GenericTransport::_recv(std::string& out) {
   }
 }
 
-int GenericTransport::_recv_until(std::string &out, char delimiter)
-{
+int GenericTransport::_recv_until(std::string &out, char delimiter) {
   if (!_socket.has_value()) return 127;
   
   try {

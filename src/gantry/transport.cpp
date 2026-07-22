@@ -21,8 +21,7 @@ void ResponseHandle::write(std::string data) {
 
 PriorityCommand::PriorityCommand(
   std::string command, int priority,
-  std::optional<ResponseHandle*> responseHandle)
-{
+  std::optional<ResponseHandle*> responseHandle) {
   this->command = command;
   this->priority = priority;
   this->responseHandle = responseHandle.value_or(new ResponseHandle());
@@ -34,8 +33,7 @@ bool PriorityCommand::operator<(const PriorityCommand &rhs) const {
 
 
 
-int Transport::_executeRW(Transport* parent)
-{
+int Transport::_executeRW(Transport* parent) {
   if (!parent) return 1;
   parent->_exec_thread_running = true;
 	
@@ -75,8 +73,7 @@ int Transport::connect(std::string ip, std::string service) {
   return ret;
 }
 
-int Transport::addCommand(PriorityCommand pc)
-{
+int Transport::addCommand(PriorityCommand pc) {
 	std::unique_lock<std::mutex> lock(_command_mtx);
 	_command_cv.wait(lock, []{return true;});
 	_command_queue.push(pc);
@@ -85,8 +82,7 @@ int Transport::addCommand(PriorityCommand pc)
   return 0;
 }
 
-Transport::~Transport()
-{
+Transport::~Transport() {
   _exec_thread_running = false;
   _command_queue = {};
   GenericTransport::disconnect();
