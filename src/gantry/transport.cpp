@@ -24,13 +24,16 @@ PriorityCommand::PriorityCommand(
   std::optional<ResponseHandle*> responseHandle) {
   this->command = command;
   this->priority = priority;
-  this->responseHandle = responseHandle.value_or(new ResponseHandle());
+  this->responseHandle = responseHandle.has_value() ? *responseHandle : nullptr;
 }
 
 bool PriorityCommand::operator<(const PriorityCommand &rhs) const {
   return this->priority < rhs.priority;
 }
 
+PriorityCommand::~PriorityCommand() {
+  if (_deleteRH_on_close) delete responseHandle; 
+}
 
 
 int Transport::_executeRW(Transport* parent) {
@@ -57,7 +60,7 @@ int Transport::_executeRW(Transport* parent) {
 
     std::string response;
     parent->GenericTransport::_recv_until(response, '>');
-    rh->write(response);
+    if (rh) rh->write(response);
   }
   return 0;
 }

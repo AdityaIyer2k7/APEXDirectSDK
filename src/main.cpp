@@ -9,7 +9,9 @@
 using namespace APEXDirectSDK::Gantry;
 
 void axistest() {
-    Axis x1;
+    Transport txp;
+    txp.connect("127.0.0.1", 10255);
+    Axis x1(&txp);
     std::string yaml_text =
         "module_idx: 1\n"
         "mm_per_rev: 15\n"
@@ -19,13 +21,15 @@ void axistest() {
     std::cout << "_mm_per_rev: " << x1._mm_per_rev << std::endl;
     std::cout << "_inverted: " << x1._inverted << std::endl;
     std::cout << "_home_is_inverted: " << x1._home_is_inverted << std::endl;
+
+    while (true) {;}
 }
 
 void parsetest() {
     std::string test0 = "0 51200.000 >";
     int ec0;     // should be 0
     double val0; // should be 51200.000
-    parse(test0, ec0, val0);
+    parseResponse(test0, ec0, val0);
     
     std::cout << "EC: " << ec0 << "; ";
     if (!ec0) std::cout << "Value: " << val0 << "; ";
@@ -34,7 +38,7 @@ void parsetest() {
     std::string test1 = "1 >";
     int ec1;     // should be 1
     double val1; // will not be read
-    parse(test1, ec1, val1);
+    parseResponse(test1, ec1, val1);
     
     std::cout << "EC: " << ec1 << "; ";
     if (!ec1) std::cout << "Value: " << val1 << "; ";

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 
-void APEXDirectSDK::Gantry::parse(std::string response, int &ec, double &value) {
+void APEXDirectSDK::Gantry::parseResponse(std::string response, int &ec, double &value) {
   std::istringstream istream(response);
 
   std::string buffer;
