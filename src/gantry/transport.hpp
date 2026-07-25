@@ -51,7 +51,7 @@ namespace APEXDirectSDK::Gantry {
       std::mutex _command_mtx;
       std::condition_variable _command_cv;
       std::priority_queue<PriorityCommand> _command_queue;
-      static int _executeRW(Transport* parent);
+      int _executeRW();
       std::optional<std::thread> _exec_thread;
   };
 }
