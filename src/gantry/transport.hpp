@@ -26,10 +26,7 @@ namespace APEXDirectSDK::Gantry {
     int priority;
     ResponseHandle* responseHandle;
     PriorityCommand(std::string command, int priority, std::optional<ResponseHandle*> responseHandle);
-    ~PriorityCommand();
     bool operator<(const PriorityCommand &rhs) const;
-    private:
-      bool _deleteRH_on_close;
   } PriorityCommand;
   
   class Transport : public GenericTransport {

@@ -31,9 +31,6 @@ bool PriorityCommand::operator<(const PriorityCommand &rhs) const {
   return this->priority < rhs.priority;
 }
 
-PriorityCommand::~PriorityCommand() {
-  if (_deleteRH_on_close) delete responseHandle; 
-}
 
 
 int Transport::_executeRW() {

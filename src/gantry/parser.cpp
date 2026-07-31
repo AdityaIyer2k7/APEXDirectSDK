@@ -14,3 +14,9 @@ void APEXDirectSDK::Gantry::parseResponse(std::string response, int &ec, double 
   std::getline(istream, buffer, ' ');
   value = std::stod(buffer);
 }
+
+template <typename T>
+bool APEXDirectSDK::Gantry::getYAMLNodeAs(YAML::Node node, T& out, T defaultValue) {
+  out = node ? node.as<T>() : defaultValue;
+  return bool(node);
+}

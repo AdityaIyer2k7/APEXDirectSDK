@@ -12,13 +12,19 @@ void axistest(Transport& transport) {
     Axis x1(&transport);
     std::string yaml_text =
         "module_idx: 1\n"
-        "mm_per_rev: 15\n"
+        "current: 4\n"
+        "unit_per_rev: 15\n"
+        "accl_unit_per_s2: 15\n"
+        "speed_unit_per_s: 45\n"
         "inverted: true\n";
     x1.configure(YAML::Load(yaml_text));
+    
     std::cout << "_module_idx: " << x1._module_idx << std::endl;
-    std::cout << "_mm_per_rev: " << x1._mm_per_rev << std::endl;
+    std::cout << "_unit_per_rev: " << x1._unit_per_rev << std::endl;
     std::cout << "_inverted: " << x1._inverted << std::endl;
-    std::cout << "_home_is_inverted: " << x1._home_is_inverted << std::endl;
+    std::cout << "_acl_revps2: " << x1._acl_revps2 << std::endl;
+    std::cout << "_spd_revps: " << x1._spd_revps << std::endl;
+    std::cout << "_home_inverted: " << x1._home_inverted << std::endl;
 }
 
 void parsetest() {
