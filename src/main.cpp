@@ -16,7 +16,8 @@ void axistest(Transport& transport) {
         "unit_per_rev: 15\n"
         "accl_unit_per_s2: 15\n"
         "speed_unit_per_s: 45\n"
-        "inverted: true\n";
+        "inverted: true\n"
+        "bounds: 3375\n";
     x1.configure(YAML::Load(yaml_text));
     
     std::cout << "_module_idx: " << x1._module_idx << std::endl;
@@ -24,7 +25,8 @@ void axistest(Transport& transport) {
     std::cout << "_inverted: " << x1._inverted << std::endl;
     std::cout << "_acl_revps2: " << x1._acl_revps2 << std::endl;
     std::cout << "_spd_revps: " << x1._spd_revps << std::endl;
-    std::cout << "_home_inverted: " << x1._home_inverted << std::endl;
+    std::cout << "_home_negative: " << x1._home_negative << std::endl;
+    std::cout << "bounds: " << x1._bound_neg_rev << ", " << x1._bound_pos_rev << std::endl;
 }
 
 void parsetest() {

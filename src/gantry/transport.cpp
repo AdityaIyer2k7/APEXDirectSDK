@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "../errors.h"
+
 using namespace APEXDirectSDK::Gantry;
 
 int ResponseHandle::read(std::string& out) {

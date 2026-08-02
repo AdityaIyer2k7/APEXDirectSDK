@@ -9,18 +9,24 @@ namespace APEXDirectSDK::Gantry {
     public:
       Axis(Transport* transport);
       int configure(YAML::Node axisConfigYAML);
+      bool configured() const;
+      int setMotor(bool isOn);
+      bool getMotor() const;
+      int moveTo(double toUnits, int priority);
+      int moveBy(double byUnits, int priority);
     // private: // TODO: Uncommend for public build
       Transport* _transport;
       int _send_to_both(std::string command, int priority);
       std::string _id_motor() const;
       std::string _id_encoder() const;
+      bool _configured;
+      bool _motor_on;
       int _module_idx;
       double _current;
-      double _unit_per_rev;
-      double _spd_revps;
-      double _acl_revps2;
+      double _unit_per_rev, _spd_revps, _acl_revps2;
+      double _home_loc_rev, _bound_pos_rev, _bound_neg_rev;
       bool _inverted;
-      bool _home_inverted;
+      bool _home_negative; // This is *relative to* _inverted; only applies for hardstop homing
       bool _homed;
   };
 } // namespace APEXDirectSDK::Gantry
