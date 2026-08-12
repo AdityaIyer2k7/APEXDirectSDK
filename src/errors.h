@@ -17,6 +17,6 @@ namespace APEXDirectSDK::Errors
     const int EC_BADINPUT = 0x01;
     const int EC_NOTREADY = 0x80;
 
-    const int EC_WRAPPED = 0x7fff * MUL_MSC_ERR;
-    const int EC_UNIMPLEMENTED = 0xffff * MUL_MSC_ERR;
+    const int EC_WRAPPED = 0x7f << (8*J_MSC_ERR);
+    const int EC_UNIMPLEMENTED = 0xff << (8*J_MSC_ERR);
 } // namespace APEXDirectSDK::Errors

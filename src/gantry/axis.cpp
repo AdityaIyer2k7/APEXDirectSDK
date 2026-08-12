@@ -24,8 +24,8 @@ int Axis::configure(YAML::Node axisConfigYAML) {
    * - speed and acceleration in revolutions per second(^2), 
    * - coordinate inversion
    * - homing direction
+   * - bounds relative to home
    * - TODO: home position
-   * - TODO: bounds relative to home
    */
   int encoder_counts;
   getYAMLNodeAs<int>(axisConfigYAML["encoder_counts"], encoder_counts, 4000);
@@ -75,11 +75,11 @@ bool Axis::configured() const {
 
 int Axis::setMotor(bool isOn) {
   if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
-
+  
   // int casting is more elegant, but less readable; please don't use it.
   _motor_on = isOn;
   _transport->addCommand(_id_motor() + (isOn ? " mtr 1" : " mtr 0"), 128);
-
+  
   return 0;
 }
 
@@ -87,12 +87,57 @@ bool Axis::getMotor() const {
   return _motor_on;
 }
 
+int Axis::getCurrentLoc(double &encLoc, double &mtrLoc, int priority) {
+  if (!_configured || !_homed) return APEXDirectSDK::Errors::EC_NOTREADY;
+  
+  ResponseHandle encResponse, mtrResponse;
+
+  PriorityCommand encLocCommand(_id_encoder() + " acp", priority, &encResponse);
+  PriorityCommand mtrLocCommand(_id_motor() + " acp", priority, &mtrResponse);
+
+  _transport->addCommand(encLocCommand);
+  _transport->addCommand(mtrLocCommand);
+
+  while (!encResponse.isReady() || !mtrResponse.isReady()) {;}
+
+  std::string out;
+  int ec;
+  double value;
+
+  encResponse.read(out);
+  parseResponse(out, ec, value);
+  if (ec) return APEXDirectSDK::Errors::EC_WRAPPED | ec;
+  encLoc = value;
+
+  mtrResponse.read(out);
+  parseResponse(out, ec, value);
+  if (ec) return APEXDirectSDK::Errors::EC_WRAPPED | ec;
+  mtrLoc = value;
+  
+  return 0;
+}
+
+int Axis::setCurrentLoc(double locUnits, int priority) {
+  if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
+  
+  double locRevs = locUnits / _unit_per_rev;
+
+  if (locRevs < _bound_neg_rev || locRevs > _bound_pos_rev)
+    return APEXDirectSDK::Errors::EC_BADINPUT;
+  
+  _send_to_both("acp " + std::to_string(locRevs), priority);
+  _homed = true;
+
+  return 0;
+}
+
 int Axis::moveTo(double toUnits, int priority) {
   if (!_configured || !_motor_on || !_homed) return APEXDirectSDK::Errors::EC_NOTREADY;
 
   double toRevs = toUnits / _unit_per_rev;
 
-  if (toRevs < _bound_neg_rev || toRevs > _bound_pos_rev) return APEXDirectSDK::Errors::EC_BADINPUT;
+  if (toRevs < _bound_neg_rev || toRevs > _bound_pos_rev)
+    return APEXDirectSDK::Errors::EC_BADINPUT;
 
   _transport->addCommand(_id_motor() + " bmt " + std::to_string(toRevs), priority);
 

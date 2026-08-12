@@ -12,11 +12,13 @@ namespace APEXDirectSDK::Gantry {
       bool configured() const;
       int setMotor(bool isOn);
       bool getMotor() const;
-      int moveTo(double toUnits, int priority);
-      int moveBy(double byUnits, int priority);
+      int getCurrentLoc(double& encLoc, double& mtrLoc, int priority = 0);
+      int setCurrentLoc(double locUnits, int priority = 0);
+      int moveTo(double toUnits, int priority = 0);
+      int moveBy(double byUnits, int priority = 0);
     // private: // TODO: Uncommend for public build
       Transport* _transport;
-      int _send_to_both(std::string command, int priority);
+      int _send_to_both(std::string command, int priority = 0);
       std::string _id_motor() const;
       std::string _id_encoder() const;
       bool _configured;

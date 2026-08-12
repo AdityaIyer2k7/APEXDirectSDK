@@ -25,7 +25,7 @@ namespace APEXDirectSDK::Gantry {
     std::string command;
     int priority;
     ResponseHandle* responseHandle;
-    PriorityCommand(std::string command, int priority, std::optional<ResponseHandle*> responseHandle);
+    PriorityCommand(std::string command, int priority, ResponseHandle* responseHandle = nullptr);
     bool operator<(const PriorityCommand &rhs) const;
   } PriorityCommand;
   
@@ -36,10 +36,8 @@ namespace APEXDirectSDK::Gantry {
       { return connect(ip, std::to_string(service)); }
 
       int addCommand(PriorityCommand pc);
-      int addCommand(std::string command, int priority)
-      { return addCommand(PriorityCommand(command, priority, std::nullopt)); }
-      int addCommand(std::string command)
-      { return addCommand(command, 0); }
+      int addCommand(std::string command, int priority = 0)
+      { return addCommand(PriorityCommand(command, priority)); }
       
       ~Transport();
     private:

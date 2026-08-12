@@ -7,7 +7,7 @@
 using namespace APEXDirectSDK::Gantry;
 
 int ResponseHandle::read(std::string& out) {
-  if (!isReady()) return -127;
+  if (!isReady()) return APEXDirectSDK::Errors::EC_NOTREADY;
   std::unique_lock<std::mutex> lock(_rw_mtx);
 	out = _response;
   return 0;
@@ -23,10 +23,10 @@ void ResponseHandle::write(std::string data) {
 
 PriorityCommand::PriorityCommand(
   std::string command, int priority,
-  std::optional<ResponseHandle*> responseHandle) {
+  ResponseHandle* responseHandle) {
   this->command = command;
   this->priority = priority;
-  this->responseHandle = responseHandle.has_value() ? *responseHandle : nullptr;
+  this->responseHandle = responseHandle;
 }
 
 bool PriorityCommand::operator<(const PriorityCommand &rhs) const {
