@@ -1,6 +1,6 @@
 #pragma once
 
-// C++ int are 4 bytes long;
+// C++ ints are 4 bytes long;
 // Use byte 0 (0x000000ff) for user errors
 // Bytes 1, 2 unused
 // Use byte 3 (0xff000000) for code errors

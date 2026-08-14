@@ -8,9 +8,9 @@ dependencies:
 - boost-cpp
 - yaml-cpp
 - numpy
+- pybind11
 - git
 - pip
 - pip:
   - scipy
   - matplotlib
-  - pybind11
