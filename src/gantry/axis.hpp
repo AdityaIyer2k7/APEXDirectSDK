@@ -5,14 +5,14 @@
 #include <yaml-cpp/yaml.h>
 #include <pybind11/pybind11.h>
 
-#define PROPERTY(T, prop) \
+#define MAKE_GETTER_SETTER(T, prop) \
   private: \
     T _##prop; \
   public: \
     virtual T& get_##prop() { return _##prop; } \
     virtual void set_##prop(T& to) { _##prop = to; }
 
-#define PROP_LIST(MACRO) \
+#define RUN_MACRO_ON_PROP_LIST(MACRO) \
   MACRO(int, module_idx) \
   MACRO(double, current) \
   MACRO(double, unit_per_rev) \
@@ -49,9 +49,12 @@ namespace APEXDirectSDK::Gantry {
       bool _configured;
       bool _motor_on;
       
-      PROP_LIST(PROPERTY);
+      RUN_MACRO_ON_PROP_LIST(MAKE_GETTER_SETTER);
       bool _homed;
   };
 } // namespace APEXDirectSDK::Gantry
 
-#undef PROPERTY
+#ifndef KEEP_HEADER_MACROS
+  #undef MAKE_GETTER_SETTER
+  #undef RUN_MACRO_ON_PROP_LIST
+#endif

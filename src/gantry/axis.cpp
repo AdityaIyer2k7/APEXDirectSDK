@@ -1,4 +1,8 @@
+
+#define KEEP_HEADER_MACROS
 #include "axis.hpp"
+
+#undef KEEP_HEADER_MACROS
 
 #include "parser.hpp"
 #include "../errors.h"
@@ -172,7 +176,7 @@ void Axis::bindPybind11(py::module_ &m) {
     .def("setCurrentLoc", &Axis::setCurrentLoc, py::arg("locUnits"), py::arg("priority"), "Sets apparent current location of motor and encoder; NOT THE SAME AS MOVEMENT!")
     .def("moveTo", &Axis::moveTo, py::arg("toUnits"), py::arg("priority"), "Move to commanded units")
     .def("moveBy", &Axis::moveBy, py::arg("byUnits"), py::arg("priority"), "Move by commanded units")
-    PROP_LIST(BIND_PROPERTY);
+    RUN_MACRO_ON_PROP_LIST(BIND_PROPERTY);
   #undef BIND_PROPERTY
 }
 
@@ -191,6 +195,3 @@ std::string Axis::_id_motor() const {
 std::string Axis::_id_encoder() const {
   return "a" + std::to_string(2*_module_idx);
 }
-
-
-
