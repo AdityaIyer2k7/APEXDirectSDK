@@ -2,7 +2,7 @@
 
 namespace py = pybind11;
 
-void APEXDirectSDK::Errors::bind(py::module_ m) {
+void APEXDirectSDK::Errors::bind(py::module_& m) {
   m.attr("J_USR_ERR") = APEXDirectSDK::Errors::J_USR_ERR;
   m.attr("J_MSC_ERR") = APEXDirectSDK::Errors::J_MSC_ERR;
 

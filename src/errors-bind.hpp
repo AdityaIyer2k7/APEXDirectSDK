@@ -6,5 +6,5 @@
 namespace py = pybind11;
 
 namespace APEXDirectSDK::Errors {
-  void bind(py::module_ m);
+  void bind(py::module_& m);
 }

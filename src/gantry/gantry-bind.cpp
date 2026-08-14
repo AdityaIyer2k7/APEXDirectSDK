@@ -4,7 +4,7 @@ namespace py = pybind11;
 
 using namespace APEXDirectSDK;
 
-void Gantry::bind_parser(py::module_ m) {
+void Gantry::bind_parser(py::module_& m) {
   m.def("parseResponse", [](std::string response) {
       int ec; double value;
       parseResponse(response, ec, value);
@@ -15,7 +15,7 @@ void Gantry::bind_parser(py::module_ m) {
     );
 }
 
-void Gantry::bind_generictransport(py::module_ m) {
+void Gantry::bind_generictransport(py::module_& m) {
   py::class_<GenericTransport>(m, "GenericTransport")
     .def(py::init<>())
     .def("connect", &GenericTransport::connect,
@@ -25,7 +25,7 @@ void Gantry::bind_generictransport(py::module_ m) {
     .def_property_readonly("isConnected", &GenericTransport::isConnected);
 }
 
-void Gantry::bind_transport(py::module_ m) {
+void Gantry::bind_transport(py::module_& m) {
   py::class_<ResponseHandle, std::shared_ptr<ResponseHandle>>(m, "Response")
     .def(py::init<>())
     .def("read", [](ResponseHandle& rh){
@@ -50,18 +50,19 @@ void Gantry::bind_transport(py::module_ m) {
     .def(py::init<>())
     .def("connect", py::overload_cast<std::string, std::string>(&Transport::connect))
     .def("connect", py::overload_cast<std::string, int>(&Transport::connect))
+    .def_property_readonly("connected", &Transport::isConnected)
     .def("addCommand", py::overload_cast<PriorityCommand>(&Transport::addCommand), py::arg("pc"))
     .def("addCommand", py::overload_cast<std::string, int>(&Transport::addCommand), py::arg("command"), py::arg("priority"))
     ;
 }
 
-void Gantry::bind_axis(py::module_ m) {
-
+void Gantry::bind_axis(py::module_& m) {
+  Axis::bindPybind11(m);
 }
 
 
 
-void Gantry::bind(py::module_ m) {
+void Gantry::bind(py::module_& m) {
   Gantry::bind_parser(m);
   Gantry::bind_generictransport(m);
   Gantry::bind_transport(m);

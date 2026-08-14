@@ -86,5 +86,5 @@ int Transport::addCommand(PriorityCommand pc) {
 Transport::~Transport() {
   _exec_thread_running = false;
   _command_queue = {};
-  GenericTransport::disconnect();
+  if (isConnected()) GenericTransport::disconnect();
 }

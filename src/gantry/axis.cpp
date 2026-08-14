@@ -154,6 +154,28 @@ int Axis::moveBy(double byUnits, int priority) {
   return 0;
 }
 
+void Axis::bindPybind11(py::module_ &m) {
+  #define BIND_PROPERTY(T, prop) \
+    .def_property("_" #prop, &Axis::get_##prop, &Axis::set_##prop)
+  
+  py::class_<Axis>(m, "Axis")
+    .def(py::init<Transport*>())
+    .def("configure", &Axis::configure)
+    .def_property_readonly("configured", &Axis::configured)
+    .def("getMotor", &Axis::getMotor)
+    .def("setMotor", &Axis::setMotor, py::arg("isOn"))
+    .def("getCurrentLoc", [](Axis& axis, int priority){
+      double encLoc, mtrLoc;
+      int ec = axis.getCurrentLoc(encLoc, mtrLoc, priority);
+      return std::make_tuple(ec, encLoc, mtrLoc);
+    }, py::arg("priority"), "Gets current location readings of encoder and motor, returns (ec, encLoc, mtrLoc)")
+    .def("setCurrentLoc", &Axis::setCurrentLoc, py::arg("locUnits"), py::arg("priority"), "Sets apparent current location of motor and encoder; NOT THE SAME AS MOVEMENT!")
+    .def("moveTo", &Axis::moveTo, py::arg("toUnits"), py::arg("priority"), "Move to commanded units")
+    .def("moveBy", &Axis::moveBy, py::arg("byUnits"), py::arg("priority"), "Move by commanded units")
+    PROP_LIST(BIND_PROPERTY);
+  #undef BIND_PROPERTY
+}
+
 int Axis::_send_to_both(std::string command, int priority) {
   int ec_mtr = _transport->addCommand(_id_motor() + " " + command, priority);
   int ec_enc = _transport->addCommand(_id_encoder() + " " + command, priority);
@@ -169,3 +191,6 @@ std::string Axis::_id_motor() const {
 std::string Axis::_id_encoder() const {
   return "a" + std::to_string(2*_module_idx);
 }
+
+
+

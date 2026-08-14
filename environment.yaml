@@ -1,4 +1,4 @@
-name: apexlab_test01
+name: apexlab
 channels:
 - defaults
 - conda-forge

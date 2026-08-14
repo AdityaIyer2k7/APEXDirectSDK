@@ -12,10 +12,10 @@ namespace py = pybind11;
 
 namespace APEXDirectSDK::Gantry
 {
-    void bind_parser(py::module_ m);
-    void bind_generictransport(py::module_ m);
-    void bind_transport(py::module_ m);
-    void bind_axis(py::module_ m);
+    void bind_parser(py::module_& m);
+    void bind_generictransport(py::module_& m);
+    void bind_transport(py::module_& m);
+    void bind_axis(py::module_& m);
     
-    void bind(py::module_ m);
+    void bind(py::module_& m);
 } // namespace APEXDirectSDK::Gantry

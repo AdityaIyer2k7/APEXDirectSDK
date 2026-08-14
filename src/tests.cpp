@@ -20,13 +20,13 @@ void axistest(Transport& transport) {
         "bounds: 3375\n";
     x1.configure(YAML::Load(yaml_text));
     
-    std::cout << "_module_idx: " << x1._module_idx << std::endl;
-    std::cout << "_unit_per_rev: " << x1._unit_per_rev << std::endl;
-    std::cout << "_inverted: " << x1._inverted << std::endl;
-    std::cout << "_acl_revps2: " << x1._acl_revps2 << std::endl;
-    std::cout << "_spd_revps: " << x1._spd_revps << std::endl;
-    std::cout << "_home_negative: " << x1._home_negative << std::endl;
-    std::cout << "bounds: " << x1._bound_neg_rev << ", " << x1._bound_pos_rev << std::endl;
+    std::cout << "_module_idx: " << x1.get_module_idx() << std::endl;
+    std::cout << "_unit_per_rev: " << x1.get_unit_per_rev() << std::endl;
+    std::cout << "_inverted: " << x1.get_inverted() << std::endl;
+    std::cout << "_acl_revps2: " << x1.get_acl_revps2() << std::endl;
+    std::cout << "_spd_revps: " << x1.get_spd_revps() << std::endl;
+    std::cout << "_home_negative: " << x1.get_home_negative() << std::endl;
+    std::cout << "bounds: " << x1.get_bound_neg_rev() << ", " << x1.get_bound_pos_rev() << std::endl;
 }
 
 void parsetest() {

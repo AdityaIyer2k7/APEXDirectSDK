@@ -17,6 +17,8 @@ endif()
 
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(yaml-cpp REQUIRED)
+# Python needed for pybind11
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
 
 if(TARGET APEXDirectSDK)
     target_link_libraries(APEXDirectSDK PRIVATE 
@@ -28,8 +30,6 @@ endif()
 
 
 
-# Python needed for pybind11
-find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
 pybind11_add_module(APEXDirectPySDK ${SOURCES})
