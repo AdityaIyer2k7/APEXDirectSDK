@@ -35,6 +35,8 @@ namespace APEXDirectSDK::Gantry {
       int connect(std::string ip, int service)
       { return connect(ip, std::to_string(service)); }
 
+      int disconnect();
+
       int addCommand(PriorityCommand pc);
       int addCommand(std::string command, int priority = 0)
       { return addCommand(PriorityCommand(command, priority)); }

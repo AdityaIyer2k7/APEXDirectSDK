@@ -50,9 +50,8 @@ void Gantry::bind_transport(py::module_& m) {
     .def(py::init<>())
     .def("connect", py::overload_cast<std::string, std::string>(&Transport::connect))
     .def("connect", py::overload_cast<std::string, int>(&Transport::connect))
-    .def_property_readonly("connected", &Transport::isConnected)
     .def("addCommand", py::overload_cast<PriorityCommand>(&Transport::addCommand), py::arg("pc"))
-    .def("addCommand", py::overload_cast<std::string, int>(&Transport::addCommand), py::arg("command"), py::arg("priority"))
+    .def("addCommand", py::overload_cast<std::string, int>(&Transport::addCommand), py::arg("command"), py::arg("priority")=0)
     ;
 }
 

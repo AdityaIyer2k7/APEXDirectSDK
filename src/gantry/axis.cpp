@@ -164,7 +164,9 @@ void Axis::bindPybind11(py::module_ &m) {
   
   py::class_<Axis>(m, "Axis")
     .def(py::init<Transport*>())
-    .def("configure", &Axis::configure)
+    .def("configure", [](Axis& axis, std::string yaml_config) {
+      axis.configure(YAML::Load(yaml_config));
+    }, py::arg("yaml_config"))
     .def_property_readonly("configured", &Axis::configured)
     .def("getMotor", &Axis::getMotor)
     .def("setMotor", &Axis::setMotor, py::arg("isOn"))

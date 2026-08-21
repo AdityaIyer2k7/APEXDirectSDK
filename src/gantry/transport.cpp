@@ -64,6 +64,7 @@ int Transport::_executeRW() {
 }
 
 int Transport::connect(std::string ip, std::string service) {
+  if (isConnected()) return APEXDirectSDK::Errors::EC_BADINPUT;
   int ret = GenericTransport::connect(ip, service);
   if (ret) return ret;
   ret = _send("\r\n");
@@ -74,7 +75,17 @@ int Transport::connect(std::string ip, std::string service) {
   return ret;
 }
 
+int Transport::disconnect() {
+  if (!isConnected())
+    return APEXDirectSDK::Errors::EC_BADINPUT | APEXDirectSDK::Errors::EC_NOTREADY;
+  GenericTransport::disconnect();
+  _exec_thread_running = false;
+  return 0;
+}
+
 int Transport::addCommand(PriorityCommand pc) {
+  if (!isConnected())
+    return APEXDirectSDK::Errors::EC_BADINPUT | APEXDirectSDK::Errors::EC_NOTREADY;
 	std::unique_lock<std::mutex> lock(_command_mtx);
 	_command_cv.wait(lock, []{return true;});
 	_command_queue.push(pc);
