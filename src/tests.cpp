@@ -26,7 +26,12 @@ void axistest(Transport& transport) {
     std::cout << "_acl_revps2: " << x1.get_acl_revps2() << std::endl;
     std::cout << "_spd_revps: " << x1.get_spd_revps() << std::endl;
     std::cout << "_home_negative: " << x1.get_home_negative() << std::endl;
+    std::cout << "_stall_thread_running: " << x1.isStallMonitorRunning() << std::endl;
     std::cout << "bounds: " << x1.get_bound_neg_rev() << ", " << x1.get_bound_pos_rev() << std::endl;
+    
+    std::cout << "Starting stall thread;" << std::endl;
+    std::cout << "ec: " << x1.stallMonitorStart() << std::endl;
+    std::cout << "_stall_thread_running: " << x1.isStallMonitorRunning() << std::endl;
 }
 
 void parsetest() {

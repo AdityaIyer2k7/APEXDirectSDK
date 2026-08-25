@@ -1,8 +1,8 @@
 
-#define KEEP_HEADER_MACROS
+#define KEEP_MACROS_axishpp
 #include "axis.hpp"
 
-#undef KEEP_HEADER_MACROS
+#undef KEEP_MACROS_axishpp
 
 #include "parser.hpp"
 #include "../errors.h"
@@ -14,7 +14,7 @@ Axis::Axis(Transport* transport) {
   _configured = false;
 }
 
-int Axis::configure(YAML::Node axisConfigYAML) {
+int Axis::configure(YAML::Node axisConfigYAML) noexcept {
   YAML::Node temp;
 
   // These settings are required : module#, units/rev, and current
@@ -22,6 +22,8 @@ int Axis::configure(YAML::Node axisConfigYAML) {
       !getYAMLNodeAs<double>(axisConfigYAML["unit_per_rev"], _unit_per_rev, 0) ||
       !getYAMLNodeAs<double>(axisConfigYAML["current"], _current, 0)
     ) return APEXDirectSDK::Errors::EC_BADINPUT;
+  
+  if (_unit_per_rev <= 0) return APEXDirectSDK::Errors::EC_BADINPUT;
 
   /* These settings are open-ended:
    * - encoder counts
@@ -29,7 +31,6 @@ int Axis::configure(YAML::Node axisConfigYAML) {
    * - coordinate inversion
    * - homing direction
    * - bounds relative to home
-   * - TODO: home position
    */
   int encoder_counts;
   getYAMLNodeAs<int>(axisConfigYAML["encoder_counts"], encoder_counts, 4000);
@@ -61,13 +62,13 @@ int Axis::configure(YAML::Node axisConfigYAML) {
   getYAMLNodeAs<bool>(axisConfigYAML["home_negative"], _home_negative, true);
 
   // Send config commands
-  _transport->addCommand(_id_motor() + " cpu 51200", 130);
-  _transport->addCommand(_id_encoder() + " cpu " + std::to_string(encoder_counts), 130);
+  _send_to_mtr("cpu 51200", 130);
+  _send_to_enc("cpu " + std::to_string(encoder_counts), 130);
   
-  _transport->addCommand(_id_motor() + " amp " + std::to_string(_current), 130);
-
   _send_to_both("civ " + std::to_string(_inverted), 129);
-  _send_to_both("acp 0", 128);
+  _send_to_both("acp 0", 129);
+
+  _send_to_mtr("amp " + std::to_string(_current), 128);
 
   _configured = true;
   return 0;
@@ -77,12 +78,12 @@ bool Axis::configured() const {
   return _configured;
 }
 
-int Axis::setMotor(bool isOn) {
+int Axis::setMotor(bool isOn, int priority) {
   if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
   
   // int casting is more elegant, but less readable; please don't use it.
   _motor_on = isOn;
-  _transport->addCommand(_id_motor() + (isOn ? " mtr 1" : " mtr 0"), 128);
+  _send_to_mtr((isOn ? " mtr 1" : " mtr 0"), priority);
   
   return 0;
 }
@@ -91,13 +92,44 @@ bool Axis::getMotor() const {
   return _motor_on;
 }
 
-int Axis::getCurrentLoc(double &encLoc, double &mtrLoc, int priority) {
+int Axis::setCurrent(double current, int priority) {
+  if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
+
+  _current = current;
+  return _send_to_mtr("amp " + std::to_string(_current));
+}
+
+double Axis::getCurrent() const {
+  return _current;
+}
+
+int Axis::fetchCurrentLoc(double &encLoc, double &mtrLoc, int priority) {
   if (!_configured || !_homed) return APEXDirectSDK::Errors::EC_NOTREADY;
+
+  return _getCurrentLocRaw(encLoc, mtrLoc, priority);
+}
+
+int Axis::setCurrentLoc(double locUnits, int priority) {
+  if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
   
+  return _setCurrentLocRaw(locUnits, priority);
+}
+
+bool Axis::isStallMonitorRunning() {
+  return _stall_thread_running;
+}
+
+int Axis::fetchStalled(bool &stalled) {
+  if (!_configured || !_stall_thread_running) return APEXDirectSDK::Errors::EC_NOTREADY;
+  stalled = _stalled;
+  return 0;
+}
+
+int Axis::_getCurrentLocRaw(double &encLoc, double &mtrLoc, int priority) {
   ResponseHandle encResponse, mtrResponse;
 
-  PriorityCommand encLocCommand(_id_encoder() + " acp", priority, &encResponse);
-  PriorityCommand mtrLocCommand(_id_motor() + " acp", priority, &mtrResponse);
+  PriorityCommand encLocCommand(_id_motor() + " acp", priority, &encResponse);
+  PriorityCommand mtrLocCommand(_id_encoder() + " acp", priority, &mtrResponse);
 
   _transport->addCommand(encLocCommand);
   _transport->addCommand(mtrLocCommand);
@@ -121,9 +153,7 @@ int Axis::getCurrentLoc(double &encLoc, double &mtrLoc, int priority) {
   return 0;
 }
 
-int Axis::setCurrentLoc(double locUnits, int priority) {
-  if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
-  
+int Axis::_setCurrentLocRaw(double locUnits, int priority) { 
   double locRevs = locUnits / _unit_per_rev;
 
   if (locRevs < _bound_neg_rev || locRevs > _bound_pos_rev)
@@ -158,6 +188,47 @@ int Axis::moveBy(double byUnits, int priority) {
   return 0;
 }
 
+int Axis::stallMonitorStart(double pollRateHz, int priority) {
+  if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
+  if (_stall_thread_running || pollRateHz <= 0.0f) return APEXDirectSDK::Errors::EC_BADINPUT;
+
+  double encLoc, mtrLoc;
+  int ec_get = _getCurrentLocRaw(encLoc, mtrLoc, priority+1);
+  int ec_set = _setCurrentLocRaw(encLoc, priority+1);
+  if (int ec = ec_get | ec_set) return ec;
+  
+  _stall_poll_rate_hz = pollRateHz;
+  _stall_thread_running = true;
+  _stall_thread = std::thread(&Axis::_stallMonitorLoop, this, priority);
+
+  return 0;
+}
+
+int Axis::stallMonitorEnd() {
+  if (!_stall_thread_running) return APEXDirectSDK::Errors::EC_NOTREADY;
+
+  _stall_thread_running = false;
+  return 0;
+}
+
+void Axis::_stallMonitorLoop(int priority) {
+  const double STALL_TOLERANCE_REV = 0.01;
+
+  auto period = std::chrono::milliseconds(
+    static_cast<long long>(1000.0 / _stall_poll_rate_hz));
+
+  while (_stall_thread_running) {
+    double encLoc, mtrLoc;
+    int ec = _getCurrentLocRaw(encLoc, mtrLoc, priority);
+
+    if (!ec) {
+      _stalled = std::abs(encLoc - mtrLoc) > STALL_TOLERANCE_REV;
+    }
+
+    std::this_thread::sleep_for(period);
+  }
+}
+
 void Axis::bindPybind11(py::module_ &m) {
   #define BIND_PROPERTY(T, prop) \
     .def_property("_" #prop, &Axis::get_##prop, &Axis::set_##prop)
@@ -168,24 +239,40 @@ void Axis::bindPybind11(py::module_ &m) {
       axis.configure(YAML::Load(yaml_config));
     }, py::arg("yaml_config"))
     .def_property_readonly("configured", &Axis::configured)
+    .def("setMotor", &Axis::setMotor, py::arg("isOn"), py::arg("priority") = 0)
     .def("getMotor", &Axis::getMotor)
-    .def("setMotor", &Axis::setMotor, py::arg("isOn"))
-    .def("getCurrentLoc", [](Axis& axis, int priority){
+    .def("setCurrent", &Axis::setCurrent, py::arg("current"), py::arg("priority") = 0)
+    .def("getCurrent", &Axis::getCurrent)
+    .def("moveTo", &Axis::moveTo, py::arg("toUnits"), py::arg("priority") = 0, "Move to commanded units")
+    .def("moveBy", &Axis::moveBy, py::arg("byUnits"), py::arg("priority") = 0, "Move by commanded units")
+    .def("fetchCurrentLoc", [](Axis& axis, int priority){
       double encLoc, mtrLoc;
-      int ec = axis.getCurrentLoc(encLoc, mtrLoc, priority);
+      int ec = axis.fetchCurrentLoc(encLoc, mtrLoc, priority);
       return std::make_tuple(ec, encLoc, mtrLoc);
-    }, py::arg("priority"), "Gets current location readings of encoder and motor, returns (ec, encLoc, mtrLoc)")
-    .def("setCurrentLoc", &Axis::setCurrentLoc, py::arg("locUnits"), py::arg("priority"), "Sets apparent current location of motor and encoder; NOT THE SAME AS MOVEMENT!")
-    .def("moveTo", &Axis::moveTo, py::arg("toUnits"), py::arg("priority"), "Move to commanded units")
-    .def("moveBy", &Axis::moveBy, py::arg("byUnits"), py::arg("priority"), "Move by commanded units")
+    }, py::arg("priority") = 0, "Gets current location readings of encoder and motor, returns (ec, encLoc, mtrLoc)")
+    .def("setCurrentLoc", &Axis::setCurrentLoc, py::arg("locUnits"), py::arg("priority") = 0, "Sets apparent current location of motor and encoder; NOT THE SAME AS MOVEMENT!")
+    .def("stallMonitorStart", &Axis::stallMonitorStart, py::arg("pollRateHz") = 5, py::arg("priority") = 0, "Start stall monitoring")
+    .def("stallMonitorEnd", &Axis::stallMonitorEnd, "End stall monitoring")
+    .def_property_readonly("stalled", [](Axis& axis){
+      bool stalled;
+      int ec = axis.fetchStalled(stalled);
+      return std::make_tuple(ec, stalled);
+    }, "Gets the stall state")
+    .def_property_readonly("stallMonitorRunning", &Axis::isStallMonitorRunning)
     RUN_MACRO_ON_PROP_LIST(BIND_PROPERTY);
   #undef BIND_PROPERTY
 }
 
+int Axis::_send_to_mtr(std::string command, int priority) {
+  return _transport->addCommand(_id_motor() + " " + command, priority);
+}
+
+int Axis::_send_to_enc(std::string command, int priority) {
+  return _transport->addCommand(_id_encoder() + " " + command, priority);
+}
+
 int Axis::_send_to_both(std::string command, int priority) {
-  int ec_mtr = _transport->addCommand(_id_motor() + " " + command, priority);
-  int ec_enc = _transport->addCommand(_id_encoder() + " " + command, priority);
-  return ec_mtr | ec_enc;
+  return _send_to_mtr(command, priority) | _send_to_enc(command, priority);
 }
 
 

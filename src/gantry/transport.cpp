@@ -9,7 +9,7 @@ using namespace APEXDirectSDK::Gantry;
 int ResponseHandle::read(std::string& out) {
   if (!isReady()) return APEXDirectSDK::Errors::EC_NOTREADY;
   std::unique_lock<std::mutex> lock(_rw_mtx);
-	out = _response;
+  out = _response;
   return 0;
 }
 
@@ -37,12 +37,12 @@ bool PriorityCommand::operator<(const PriorityCommand &rhs) const {
 
 int Transport::_executeRW() {
   _exec_thread_running = true;
-	
+  
   while (_exec_thread_running) {
     std::unique_lock<std::mutex> lock(_command_mtx);
-		_command_cv.wait(lock, [this]{
-			return !this->_command_queue.empty();
-		});
+    _command_cv.wait(lock, [this]{
+      return !this->_command_queue.empty();
+    });
     PriorityCommand next = _command_queue.top();
     _command_queue.pop();
     std::string command = next.command;
@@ -50,7 +50,7 @@ int Transport::_executeRW() {
       command += "\r\n";
     ResponseHandle* rh = next.responseHandle;
     lock.unlock();
-		_command_cv.notify_all();
+    _command_cv.notify_all();
     
     GenericTransport::_send(command);
     
@@ -86,11 +86,11 @@ int Transport::disconnect() {
 int Transport::addCommand(PriorityCommand pc) {
   if (!isConnected())
     return APEXDirectSDK::Errors::EC_BADINPUT | APEXDirectSDK::Errors::EC_NOTREADY;
-	std::unique_lock<std::mutex> lock(_command_mtx);
-	_command_cv.wait(lock, []{return true;});
-	_command_queue.push(pc);
-	lock.unlock();
-	_command_cv.notify_all();
+  std::unique_lock<std::mutex> lock(_command_mtx);
+  _command_cv.wait(lock, []{return true;});
+  _command_queue.push(pc);
+  lock.unlock();
+  _command_cv.notify_all();
   return 0;
 }
 
