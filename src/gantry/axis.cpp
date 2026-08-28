@@ -14,7 +14,7 @@ Axis::Axis(Transport* transport) {
   _configured = false;
 }
 
-int Axis::configure(YAML::Node axisConfigYAML) noexcept {
+int Axis::configure(YAML::Node axisConfigYAML) {
   YAML::Node temp;
 
   // These settings are required : module#, units/rev, and current
@@ -70,6 +70,10 @@ int Axis::configure(YAML::Node axisConfigYAML) noexcept {
 
   _send_to_mtr("amp " + std::to_string(_current), 128);
 
+  _send_to_mtr("spd " + std::to_string(_spd_revps), 128);
+  _send_to_mtr("acl " + std::to_string(_acl_revps2), 128);
+  _send_to_mtr("dcl " + std::to_string(_acl_revps2), 128);
+
   _configured = true;
   return 0;
 }
@@ -83,7 +87,7 @@ int Axis::setMotor(bool isOn, int priority) {
   
   // int casting is more elegant, but less readable; please don't use it.
   _motor_on = isOn;
-  _send_to_mtr((isOn ? " mtr 1" : " mtr 0"), priority);
+  _send_to_mtr((isOn ? "mtr 1" : "mtr 0"), priority);
   
   return 0;
 }
@@ -103,16 +107,22 @@ double Axis::getCurrent() const {
   return _current;
 }
 
-int Axis::fetchCurrentLoc(double &encLoc, double &mtrLoc, int priority) {
+int Axis::fetchCurrentLoc(double &encLocUnits, double &mtrLocUnits, int priority) {
   if (!_configured || !_homed) return APEXDirectSDK::Errors::EC_NOTREADY;
 
-  return _getCurrentLocRaw(encLoc, mtrLoc, priority);
+  int ec = _fetchCurrentLocRaw(encLocUnits, mtrLocUnits, priority);
+  if (ec) return ec;
+
+  encLocUnits *= _unit_per_rev;
+  mtrLocUnits *= _unit_per_rev;
+
+  return 0;
 }
 
-int Axis::setCurrentLoc(double locUnits, int priority) {
+int Axis::forceCurrentLoc(double locUnits, int priority) {
   if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
   
-  return _setCurrentLocRaw(locUnits, priority);
+  return _forceCurrentLocRaw(locUnits / _unit_per_rev, priority);
 }
 
 bool Axis::isStallMonitorRunning() {
@@ -125,7 +135,7 @@ int Axis::fetchStalled(bool &stalled) {
   return 0;
 }
 
-int Axis::_getCurrentLocRaw(double &encLoc, double &mtrLoc, int priority) {
+int Axis::_fetchCurrentLocRaw(double &encLocRevs, double &mtrLocRevs, int priority) {
   ResponseHandle encResponse, mtrResponse;
 
   PriorityCommand encLocCommand(_id_motor() + " acp", priority, &encResponse);
@@ -143,19 +153,17 @@ int Axis::_getCurrentLocRaw(double &encLoc, double &mtrLoc, int priority) {
   encResponse.read(out);
   parseResponse(out, ec, value);
   if (ec) return APEXDirectSDK::Errors::EC_WRAPPED | ec;
-  encLoc = value;
+  encLocRevs = value;
 
   mtrResponse.read(out);
   parseResponse(out, ec, value);
   if (ec) return APEXDirectSDK::Errors::EC_WRAPPED | ec;
-  mtrLoc = value;
+  mtrLocRevs = value;
   
   return 0;
 }
 
-int Axis::_setCurrentLocRaw(double locUnits, int priority) { 
-  double locRevs = locUnits / _unit_per_rev;
-
+int Axis::_forceCurrentLocRaw(double locRevs, int priority) { 
   if (locRevs < _bound_neg_rev || locRevs > _bound_pos_rev)
     return APEXDirectSDK::Errors::EC_BADINPUT;
   
@@ -188,18 +196,18 @@ int Axis::moveBy(double byUnits, int priority) {
   return 0;
 }
 
+int Axis::stop(int priority, bool abort) {
+  return _send_to_mtr(abort ? "abt" : "stp", priority);
+}
+
 int Axis::stallMonitorStart(double pollRateHz, int priority) {
   if (!_configured) return APEXDirectSDK::Errors::EC_NOTREADY;
   if (_stall_thread_running || pollRateHz <= 0.0f) return APEXDirectSDK::Errors::EC_BADINPUT;
-
-  double encLoc, mtrLoc;
-  int ec_get = _getCurrentLocRaw(encLoc, mtrLoc, priority+1);
-  int ec_set = _setCurrentLocRaw(encLoc, priority+1);
-  if (int ec = ec_get | ec_set) return ec;
   
   _stall_poll_rate_hz = pollRateHz;
   _stall_thread_running = true;
   _stall_thread = std::thread(&Axis::_stallMonitorLoop, this, priority);
+  _stall_thread.detach();
 
   return 0;
 }
@@ -219,7 +227,7 @@ void Axis::_stallMonitorLoop(int priority) {
 
   while (_stall_thread_running) {
     double encLoc, mtrLoc;
-    int ec = _getCurrentLocRaw(encLoc, mtrLoc, priority);
+    int ec = _fetchCurrentLocRaw(encLoc, mtrLoc, priority);
 
     if (!ec) {
       _stalled = std::abs(encLoc - mtrLoc) > STALL_TOLERANCE_REV;
@@ -236,7 +244,7 @@ void Axis::bindPybind11(py::module_ &m) {
   py::class_<Axis>(m, "Axis")
     .def(py::init<Transport*>())
     .def("configure", [](Axis& axis, std::string yaml_config) {
-      axis.configure(YAML::Load(yaml_config));
+      return axis.configure(YAML::Load(yaml_config));
     }, py::arg("yaml_config"))
     .def_property_readonly("configured", &Axis::configured)
     .def("setMotor", &Axis::setMotor, py::arg("isOn"), py::arg("priority") = 0)
@@ -245,12 +253,13 @@ void Axis::bindPybind11(py::module_ &m) {
     .def("getCurrent", &Axis::getCurrent)
     .def("moveTo", &Axis::moveTo, py::arg("toUnits"), py::arg("priority") = 0, "Move to commanded units")
     .def("moveBy", &Axis::moveBy, py::arg("byUnits"), py::arg("priority") = 0, "Move by commanded units")
+    .def("stop", &Axis::stop, py::arg("priority") = 127, py::arg("abort") = true, "Stop or abort commands")
     .def("fetchCurrentLoc", [](Axis& axis, int priority){
       double encLoc, mtrLoc;
       int ec = axis.fetchCurrentLoc(encLoc, mtrLoc, priority);
       return std::make_tuple(ec, encLoc, mtrLoc);
-    }, py::arg("priority") = 0, "Gets current location readings of encoder and motor, returns (ec, encLoc, mtrLoc)")
-    .def("setCurrentLoc", &Axis::setCurrentLoc, py::arg("locUnits"), py::arg("priority") = 0, "Sets apparent current location of motor and encoder; NOT THE SAME AS MOVEMENT!")
+    }, py::arg("priority") = 0, "Gets current location readings of encoder and motor, returns (ec, encLocUnits, mtrLocUnits)")
+    .def("forceCurrentLoc", &Axis::forceCurrentLoc, py::arg("locUnits"), py::arg("priority") = 0, "Forces location of motor and encoder; NOT THE SAME AS MOVEMENT!")
     .def("stallMonitorStart", &Axis::stallMonitorStart, py::arg("pollRateHz") = 5, py::arg("priority") = 0, "Start stall monitoring")
     .def("stallMonitorEnd", &Axis::stallMonitorEnd, "End stall monitoring")
     .def_property_readonly("stalled", [](Axis& axis){

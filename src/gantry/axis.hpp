@@ -43,8 +43,9 @@ namespace APEXDirectSDK::Gantry {
       // Movement
       int moveTo(double toUnits, int priority = 0);
       int moveBy(double byUnits, int priority = 0);
-      int fetchCurrentLoc(double& encLoc, double& mtrLoc, int priority = 0);
-      int setCurrentLoc(double locUnits, int priority = 0);
+      int stop(int priority = 127, bool abort = true);
+      int fetchCurrentLoc(double& encLocUnits, double& mtrLocUnits, int priority = 0);
+      int forceCurrentLoc(double locUnits, int priority = 0);
       // Stall
       int stallMonitorStart(double pollRateHz = 5, int priority = 127);
       int stallMonitorEnd();
@@ -59,17 +60,17 @@ namespace APEXDirectSDK::Gantry {
       int _send_to_mtr(std::string command, int priority = 0);
       int _send_to_enc(std::string command, int priority = 0);
       int _send_to_both(std::string command, int priority = 0);
-      bool _configured;
-      bool _motor_on;
-      double _current;
+      bool _configured = false;
+      bool _motor_on = false;
+      double _current = 0;
       // Movement
-      bool _homed;
-      int _getCurrentLocRaw(double& encLoc, double& mtrLoc, int priority = 0);
-      int _setCurrentLocRaw(double locUnits, int priority = 0);
+      bool _homed = false;
+      int _fetchCurrentLocRaw(double& encLocRevs, double& mtrLocRevs, int priority = 0);
+      int _forceCurrentLocRaw(double locRevs, int priority = 0);
       // Stall
-      double _stall_poll_rate_hz;
+      double _stall_poll_rate_hz = 5;
       std::atomic<bool> _stall_thread_running = false;
-      std::atomic<bool> _stalled;
+      std::atomic<bool> _stalled = false;
       std::thread _stall_thread;
       void _stallMonitorLoop(int priority);
       RUN_MACRO_ON_PROP_LIST(MAKE_GETTER_SETTER);
